@@ -22,3 +22,36 @@
 - **权限边界区分：** 剔除多租户设计，统一由 OpenIddict 结合 ABP User Roles 主导。
 - **快照持久方案：** 选择单表 JSON 长文本列存储订单当时的交易商品与退款规则，取代强关联快照表，此举极大优化高频读取效率。
 - **并发锁颗粒度：** 采用精细化粒度记录级别保护运力资源（只锁定具体 `[日期+时段段内]` 的可调度人员总量）。
+
+## 任务执行清单
+
+### Phase 1 基础环境与鉴权基建
+- [x] 初始化 ABP 后端骨架（项目名 `CY.HomeCleaning`）。
+- [x] 连接字符串切换为 LocalDB（数据库 `CYHomeCleaning`）。
+- [x] 执行 `DbMigrator` 完成数据库迁移与种子初始化。
+- [x] OpenIddict 发现文档、`/connect/token` 端点可用性验证通过。
+- [x] 新增开发联调客户端 `HomeCleaning_Dev`（支持 password + refresh_token）。
+- [x] 验证 `password grant` 下发 Token 成功。
+
+### Phase 1 权限体系（先做第一项）
+- [x] 新增 B/C 端权限定义（Backoffice/Customer 权限树）。
+- [x] 新增角色常量（`admin`、`operator`、`customer`）。
+- [x] 新增角色权限种子（角色自动创建 + 权限自动赋予）。
+- [x] 增加策略授权（BackofficeOnly、CustomerOnly）。
+- [x] 增加安全探针接口并验证：`admin` 访问 Backoffice 返回 `200`，访问 CustomerOnly 返回 `403`。
+
+### Phase 1 微信小程序扩展授权（再做第二项）
+- [x] 新增微信 MiniApp 配置与认证服务抽象（支持 Mock 模式）。
+- [x] 新增自定义 Grant Type：`wechat_miniapp`。
+- [x] 新增 OpenIddict 客户端 `HomeCleaning_WeChatMiniApp`。
+- [x] 在 Host 层注册扩展授权处理器并完成编译通过。
+- [x] 使用 `grant_type=wechat_miniapp` 实测 Token 下发成功。
+
+### Phase 2 核心业务表（待开始）
+- [ ] 落地 `ServiceItem`、`CapacitySchedule`、`Order`、`CouponTemplate`、`UserCoupon` 实体设计。
+- [ ] 增加 `Order.SnapshotData (JSON)` 映射与持久化策略。
+- [ ] 增加 `CapacitySchedule.RowVersion` 并发字段与防超卖测试。
+
+### 下一步待办
+- [ ] 将微信配置从 Mock 切换到真实 `AppId/AppSecret`，并关闭 `EnableMockMode`。
+- [ ] 补充 C 端最小业务闭环 API（如“我的订单”）并加 Customer 权限控制。
