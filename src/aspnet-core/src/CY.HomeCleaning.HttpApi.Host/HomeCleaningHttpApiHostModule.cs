@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -10,10 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CY.HomeCleaning.EntityFrameworkCore;
 using CY.HomeCleaning.MultiTenancy;
+using CY.HomeCleaning.Authorization;
+using CY.HomeCleaning.OpenIddict;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;
+using OpenIddict.Server;
 using Volo.Abp;
 using Volo.Abp.Account;
 using Volo.Abp.Account.Web;
@@ -28,6 +32,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.OpenIddict.ExtensionGrantTypes;
 using Volo.Abp.VirtualFileSystem;
 
 namespace CY.HomeCleaning;
@@ -47,6 +52,14 @@ public class HomeCleaningHttpApiHostModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
+        PreConfigure<OpenIddictServerBuilder>(builder =>
+        {
+            builder.Configure(options =>
+            {
+                options.GrantTypes.Add(HomeCleaningGrantTypes.WeChatMiniApp);
+            });
+        });
+
         PreConfigure<OpenIddictBuilder>(builder =>
         {
             builder.AddValidation(options =>
@@ -55,6 +68,11 @@ public class HomeCleaningHttpApiHostModule : AbpModule
                 options.UseLocalServer();
                 options.UseAspNetCore();
             });
+        });
+
+        Configure<AbpOpenIddictExtensionGrantsOptions>(options =>
+        {
+            options.Grants.Add(HomeCleaningGrantTypes.WeChatMiniApp, new WeChatMiniAppTokenExtensionGrant());
         });
     }
 
@@ -67,6 +85,7 @@ public class HomeCleaningHttpApiHostModule : AbpModule
         ConfigureBundles();
         ConfigureUrls(configuration);
         ConfigureConventionalControllers();
+        ConfigureAuthorization(context);
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
         ConfigureSwaggerServices(context, configuration);
@@ -136,6 +155,22 @@ public class HomeCleaningHttpApiHostModule : AbpModule
         Configure<AbpAspNetCoreMvcOptions>(options =>
         {
             options.ConventionalControllers.Create(typeof(HomeCleaningApplicationModule).Assembly);
+        });
+    }
+
+    private static void ConfigureAuthorization(ServiceConfigurationContext context)
+    {
+        context.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy(
+                HomeCleaningAuthorizationPolicies.BackofficeOnly,
+                policy => policy.RequireRole(HomeCleaningRoles.Admin, HomeCleaningRoles.Operator)
+            );
+
+            options.AddPolicy(
+                HomeCleaningAuthorizationPolicies.CustomerOnly,
+                policy => policy.RequireRole(HomeCleaningRoles.Customer)
+            );
         });
     }
 

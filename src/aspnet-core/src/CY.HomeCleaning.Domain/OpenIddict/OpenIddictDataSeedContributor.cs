@@ -102,6 +102,46 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 clientUri: swaggerRootUrl
             );
         }
+
+        // Development Client (password grant for local integration testing)
+        var devClientId = configurationSection["HomeCleaning_Dev:ClientId"];
+        var devClientSecret = configurationSection["HomeCleaning_Dev:ClientSecret"];
+        if (!devClientId.IsNullOrWhiteSpace() && !devClientSecret.IsNullOrWhiteSpace())
+        {
+            await CreateApplicationAsync(
+                name: devClientId!,
+                type: OpenIddictConstants.ClientTypes.Confidential,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "Development Client",
+                secret: devClientSecret,
+                grantTypes: new List<string>
+                {
+                    OpenIddictConstants.GrantTypes.Password,
+                    OpenIddictConstants.GrantTypes.RefreshToken
+                },
+                scopes: commonScopes
+            );
+        }
+
+        // WeChat MiniApp Client (custom extension grant)
+        var weChatMiniAppClientId = configurationSection["HomeCleaning_WeChatMiniApp:ClientId"];
+        var weChatMiniAppClientSecret = configurationSection["HomeCleaning_WeChatMiniApp:ClientSecret"];
+        if (!weChatMiniAppClientId.IsNullOrWhiteSpace() && !weChatMiniAppClientSecret.IsNullOrWhiteSpace())
+        {
+            await CreateApplicationAsync(
+                name: weChatMiniAppClientId!,
+                type: OpenIddictConstants.ClientTypes.Confidential,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "WeChat MiniApp Client",
+                secret: weChatMiniAppClientSecret,
+                grantTypes: new List<string>
+                {
+                    HomeCleaningGrantTypes.WeChatMiniApp,
+                    OpenIddictConstants.GrantTypes.RefreshToken
+                },
+                scopes: commonScopes
+            );
+        }
     }
 
     private async Task CreateApplicationAsync(
