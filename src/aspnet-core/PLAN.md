@@ -53,5 +53,5 @@
 - [ ] 增加 `CapacitySchedule.RowVersion` 并发字段与防超卖测试。
 
 ### 下一步待办
-- [ ] 将微信配置从 Mock 切换到真实 `AppId/AppSecret`，并关闭 `EnableMockMode`。
+- [ ] 将微信配置从 Mock 切换到真实 `AppId/AppSecret`，并关闭 `EnableMockMode`。（已完成配置切换与启动校验，待真实 `code` 联调通过后勾选）
 - [ ] 补充 C 端最小业务闭环 API（如“我的订单”）并加 Customer 权限控制。

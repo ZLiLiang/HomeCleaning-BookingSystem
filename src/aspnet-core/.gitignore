@@ -258,6 +258,10 @@ src/CY.HomeCleaning.AuthServer/Logs/*
 src/CY.HomeCleaning.HttpApi.Host/Logs/*
 src/CY.HomeCleaning.HttpApi.Host/Logs/*
 src/CY.HomeCleaning.DbMigrator/Logs/*
+
+# Local secrets (never commit credentials)
+src/CY.HomeCleaning.HttpApi.Host/appsettings.secrets.json
+src/CY.HomeCleaning.DbMigrator/appsettings.secrets.json
 src/CY.HomeCleaning.Blazor.Server/Logs/*
 src/CY.HomeCleaning.Blazor.Server.Tiered/Logs/*
 

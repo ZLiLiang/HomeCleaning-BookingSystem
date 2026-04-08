@@ -48,6 +48,56 @@ abp install-libs
 
 Run `CY.HomeCleaning.DbMigrator` to create the initial database. This should be done in the first run. It is also needed if a new database migration is added to the solution later.
 
+### WeChat MiniApp real-mode setup (secrets/env)
+
+`WeChat:MiniApp:EnableMockMode` is now expected to be `false` in runtime config. Do not store `AppId` and `AppSecret` in `appsettings.json`.
+
+Use one of the secure sources below:
+
+1. User Secrets (recommended for local development)
+
+```powershell
+cd src/CY.HomeCleaning.HttpApi.Host
+dotnet user-secrets set "WeChat:MiniApp:AppId" "<your-real-appid>"
+dotnet user-secrets set "WeChat:MiniApp:AppSecret" "<your-real-appsecret>"
+
+cd ../CY.HomeCleaning.DbMigrator
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:Default" "Server=(LocalDb)\\MSSQLLocalDB;Database=CYHomeCleaning;Trusted_Connection=True;TrustServerCertificate=True"
+```
+
+2. Environment variables (CI/CD or container)
+
+```powershell
+$env:WeChat__MiniApp__AppId="<your-real-appid>"
+$env:WeChat__MiniApp__AppSecret="<your-real-appsecret>"
+```
+
+The application validates this on startup. If mock mode is off but either secret is missing, startup fails fast.
+
+### Real code integration checklist
+
+1. Run from project directories so local `appsettings.json` can be loaded correctly.
+
+```powershell
+cd src/CY.HomeCleaning.DbMigrator
+dotnet run
+
+cd ../CY.HomeCleaning.HttpApi.Host
+dotnet run
+```
+
+2. Use real mini-program `code` from WeChat client and request token:
+
+```powershell
+$body = "client_id=HomeCleaning_WeChatMiniApp&client_secret=HomeCleaning_WeChatMiniApp_Secret_2026&grant_type=wechat_miniapp&code=<real-code>"
+Invoke-RestMethod -Method Post -Uri "https://localhost:44344/connect/token" -ContentType "application/x-www-form-urlencoded" -Body $body
+```
+
+3. Expected result:
+- success: access token is returned.
+- failure: returns `HomeCleaning:WeChatCodeExchangeFailed` with WeChat `errcode/errmsg` for troubleshooting.
+
 ### Solution structure
 
 This is a layered monolith application that consists of the following applications:

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using CY.HomeCleaning.WeChat;
 using CY.HomeCleaning.MultiTenancy;
 using Volo.Abp.AuditLogging;
@@ -66,7 +67,15 @@ public class HomeCleaningDomainModule : AbpModule
 
         context.Services.AddHttpClient();
 
-        Configure<WeChatMiniAppOptions>(configuration.GetSection(WeChatMiniAppOptions.SectionName));
+        context.Services
+            .AddOptions<WeChatMiniAppOptions>()
+            .Bind(configuration.GetSection(WeChatMiniAppOptions.SectionName))
+            .Validate(
+                options =>
+                    options.EnableMockMode ||
+                    (!string.IsNullOrWhiteSpace(options.AppId) && !string.IsNullOrWhiteSpace(options.AppSecret)),
+                "When WeChat MiniApp mock mode is disabled, AppId and AppSecret must be provided.")
+            .ValidateOnStart();
 
 #if DEBUG
         context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
