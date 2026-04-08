@@ -4,6 +4,7 @@ using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using CY.HomeCleaning.Business;
 
 namespace CY.HomeCleaning.EntityFrameworkCore;
 
@@ -23,7 +25,11 @@ public class HomeCleaningDbContext :
     IIdentityDbContext,
     ITenantManagementDbContext
 {
-    /* Add DbSet properties for your Aggregate Roots / Entities here. */
+    public DbSet<ServiceItem> ServiceItems { get; set; }
+    public DbSet<CapacitySchedule> CapacitySchedules { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<CouponTemplate> CouponTemplates { get; set; }
+    public DbSet<UserCoupon> UserCoupons { get; set; }
 
     #region Entities from the modules
 
@@ -76,11 +82,67 @@ public class HomeCleaningDbContext :
 
         /* Configure your own tables/entities inside here */
 
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(HomeCleaningConsts.DbTablePrefix + "YourEntities", HomeCleaningConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
+        builder.Entity<ServiceItem>(b =>
+        {
+            b.ToTable(HomeCleaningConsts.DbTablePrefix + "ServiceItems", HomeCleaningConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(HomeCleaningEntityConsts.NameMaxLength);
+            b.Property(x => x.BasePrice).HasPrecision(18, 2);
+            b.Property(x => x.BillingUnitType).IsRequired();
+            b.Property(x => x.IntroductionResourceUrl).HasMaxLength(HomeCleaningEntityConsts.UrlMaxLength);
+        });
+
+        builder.Entity<CapacitySchedule>(b =>
+        {
+            b.ToTable(HomeCleaningConsts.DbTablePrefix + "CapacitySchedules", HomeCleaningConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ServiceDate).HasColumnType("date");
+            b.Property(x => x.TimeSlot).IsRequired().HasMaxLength(HomeCleaningEntityConsts.TimeSlotMaxLength);
+            b.Property(x => x.MaxCapacity).IsRequired();
+            b.Property(x => x.UsedCapacity).IsRequired();
+            b.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken();
+            b.HasIndex(x => new { x.ServiceDate, x.TimeSlot }).IsUnique();
+        });
+
+        builder.Entity<Order>(b =>
+        {
+            b.ToTable(HomeCleaningConsts.DbTablePrefix + "Orders", HomeCleaningConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.OrderNo).IsRequired().HasMaxLength(HomeCleaningEntityConsts.OrderNoMaxLength);
+            b.Property(x => x.TimeSlot).IsRequired().HasMaxLength(HomeCleaningEntityConsts.TimeSlotMaxLength);
+            b.Property(x => x.OriginalAmount).HasPrecision(18, 2);
+            b.Property(x => x.PaidAmount).HasPrecision(18, 2);
+            b.Property(x => x.Status).IsRequired();
+            b.Property(x => x.SnapshotData).IsRequired().HasMaxLength(HomeCleaningEntityConsts.SnapshotDataMaxLength);
+
+            b.HasIndex(x => x.OrderNo).IsUnique();
+            b.HasIndex(x => x.CustomerUserId);
+            b.HasIndex(x => x.ServiceItemId);
+        });
+
+        builder.Entity<CouponTemplate>(b =>
+        {
+            b.ToTable(HomeCleaningConsts.DbTablePrefix + "CouponTemplates", HomeCleaningConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(HomeCleaningEntityConsts.NameMaxLength);
+            b.Property(x => x.FaceValue).HasPrecision(18, 2);
+            b.Property(x => x.MinimumSpend).HasPrecision(18, 2);
+            b.Property(x => x.TotalCount).IsRequired();
+        });
+
+        builder.Entity<UserCoupon>(b =>
+        {
+            b.ToTable(HomeCleaningConsts.DbTablePrefix + "UserCoupons", HomeCleaningConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Status).IsRequired();
+            b.HasIndex(x => x.UserId);
+            b.HasIndex(x => x.CouponTemplateId);
+            b.HasIndex(x => x.LockedOrderId);
+        });
     }
 }

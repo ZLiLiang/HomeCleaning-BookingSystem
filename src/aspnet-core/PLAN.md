@@ -48,10 +48,20 @@
 - [x] 使用 `grant_type=wechat_miniapp` 实测 Token 下发成功。
 
 ### Phase 2 核心业务表（待开始）
-- [ ] 落地 `ServiceItem`、`CapacitySchedule`、`Order`、`CouponTemplate`、`UserCoupon` 实体设计。
-- [ ] 增加 `Order.SnapshotData (JSON)` 映射与持久化策略。
-- [ ] 增加 `CapacitySchedule.RowVersion` 并发字段与防超卖测试。
+- [x] 落地 `ServiceItem`、`CapacitySchedule`、`Order`、`CouponTemplate`、`UserCoupon` 实体设计。
+- [x] 增加 `Order.SnapshotData (JSON)` 映射与持久化策略。
+- [ ] 增加 `CapacitySchedule.RowVersion` 并发字段与防超卖测试。（并发字段与模型级约束测试已完成；防超卖业务级测试待订单创建/占用流程落地后补充）
 
 ### 下一步待办
 - [ ] 将微信配置从 Mock 切换到真实 `AppId/AppSecret`，并关闭 `EnableMockMode`。（已完成配置切换与启动校验，待真实 `code` 联调通过后勾选）
 - [ ] 补充 C 端最小业务闭环 API（如“我的订单”）并加 Customer 权限控制。
+
+### 小程序联调延期计划（2026-04-08）
+- 现状：小程序端尚未开工，暂不具备真实 `code` 产生条件，无法完成 `wechat_miniapp` 端到端联调。
+- 已完成前置：后端已关闭 Mock 默认值、增加 `AppId/AppSecret` 启动校验、支持 secrets/env 注入、安装匹配版本 ABP CLI 并执行 `install-libs`。
+- 触发条件：小程序端完成登录能力并可提供真实 `code`。
+- 执行步骤：
+   1. 注入真实 `WeChat:MiniApp:AppId` 与 `WeChat:MiniApp:AppSecret`（User Secrets 或环境变量）。
+   2. 启动 `DbMigrator` 与 `HttpApi.Host`，确认启动通过。
+   3. 使用真实 `code` 调用 `/connect/token`（`grant_type=wechat_miniapp`）验证 Token 下发。
+   4. 联调通过后回填本文档：勾选“微信配置切换”待办，并记录联调证据（时间、环境、返回结果）。

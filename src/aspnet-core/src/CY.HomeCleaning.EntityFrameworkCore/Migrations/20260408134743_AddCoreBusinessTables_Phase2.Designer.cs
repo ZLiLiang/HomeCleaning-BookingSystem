@@ -4,6 +4,7 @@ using CY.HomeCleaning.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace CY.HomeCleaning.Migrations
 {
     [DbContext(typeof(HomeCleaningDbContext))]
-    partial class HomeCleaningDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408134743_AddCoreBusinessTables_Phase2")]
+    partial class AddCoreBusinessTables_Phase2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
